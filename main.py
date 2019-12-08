@@ -1,8 +1,12 @@
+# -*- coding: utf8 -*-
 from __future__ import print_function
 
 import numpy as np
+import pandas as pd
 from scipy import signal
-from util import dofft
+from util import *
+
+np.set_printoptions(linewidth=200, threshold='nan')
 
 try:
     from pylab import *
@@ -12,14 +16,18 @@ except ImportError:
     raise SystemExit(1)
 
 def filter_plot():
-    hfile = open('./iq_20M.dat', 'rb')
+    hfile = open('./data/iq_20M.dat', 'rb')
     sample_rate = 20e6
+    sample_time = 500e-6
     low_freq = 1e6
     high_freq = 2e6
     high_freq2 = 3e6
-    block_size = int(sample_rate*20e-6)
-    start = 1000
+    block_size = int(sample_rate*sample_time)
+    start = 10000
     datatype = np.complex64
+    threshold = 0.1775      # good: 0.1575
+    frame_start_indices = [6,132,238]
+
     global iq,reals,imags,times
 
     # read iq data from file
@@ -42,16 +50,45 @@ def filter_plot():
     bandpass_iq2 = signal.sosfilt(sos2, iq)
     bandpass_reals2 = np.array([r.real for r in bandpass_iq2])
     bandpass_imags2 = np.array([i.imag for i in bandpass_iq2])
+    print('iq length:{}, iq1 length:{}, iq2 length:{}'.format(len(iq), len(bandpass_iq), len(bandpass_iq2)))
 
-    t = np.linspace(0, 1, int(sample_rate*0.01), False)  # 1 second
+
+    # autocorrelation
+    ac = acf_norm(iq)
+    ac_indices = np.arange(len(ac))
+    ac_indices[ac<threshold] = 0
+    pd_ac = pd.Series(ac)
+    print(pd_ac.describe())
+    ac_det_indices = np.arange(len(ac))[ac>threshold]
+    ac_det_start_len = convert_seq2start_len(ac_det_indices)
+    ac[ac < threshold] = 0
+    print('iq autocorrelation [5]: {}, [6]: {}'.format(ac[5], ac[6]))
+    print(ac_det_start_len.describe())
+    print(ac_det_start_len)
+
+    # fft frequency domain analysis
+    start_index, length = 21, 64
+    iq_slices = iq[start_index: start_index+length]
+    iq_fft = dofft(iq_slices)
+    tstep = 1.0 / sample_rate
+    # self.time = numpy.array([tstep*(self.position + i) for i in range(len(self.iq))])
+    time = np.array([tstep * (i) for i in range(len(iq_slices))])
+    freqs = calc_freq(time, sample_rate)
 
     # plot signals
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex='all')
-    plot_iq = ax1.plot(times, reals, 'bo-', times, imags, 'ro-')
-    plot_iq1 = ax2.plot(times, bandpass_reals, 'bo-', times, bandpass_imags, 'ro-')
-    plot_iq2 = ax3.plot(times, bandpass_reals2, 'bo-', times, bandpass_imags2, 'ro-')
-
+    fig, (ax1_t, ax1_s, ax1_f) = plt.subplots(3, 1)
+    plot_iq = ax1_t.plot(times, reals, 'b-', times, imags, 'r-')
+    # plot_iq1 = ax2.plot(times, bandpass_reals, 'bo-', times, bandpass_imags, 'ro-')
+    # plot_iq2 = ax3.plot(times, bandpass_reals2, 'bo-', times, bandpass_imags2, 'ro-')
+    # plot fft
+    ax1_s.plot(time, iq_slices, 'b-')
+    ax1_f.plot(freqs, iq_fft, 'b-')
+    # ax1_f.set_ylim((0,1.1))
     plt.show()
+
+
+
+    # import statsmodels.tsa.api as smt
 
 
 if __name__=='__main__':

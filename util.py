@@ -35,6 +35,8 @@ def moving_avg(data, window_size=48, scale=1.0):
     return np.array(sum_list)
 
 def convert_seq2start_len(data_indices):
+    if len(data_indices) == 0:
+        return pd.DataFrame({'start_index': [0], 'length': [0]})
     start_list = []
     length_list = []
     start = data_indices[0]

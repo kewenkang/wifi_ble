@@ -15,17 +15,33 @@ except ImportError:
            Python TkInter https://wiki.python.org/moin/TkInter to run this script")
     raise SystemExit(1)
 
+class wifi_ana(object):
+
+    def __init__(self, filename, options):
+        self.hfile = open(filename, 'rb')
+        self.start = options.start
+        self.sample_rate = options.sample_rate
+        self.block_length = options.block_length
+
+        self.datatype = np.complex64
+        self.sizeof_data = self.datatype().nbytes
+
+    @staticmethod
+    def set_options(cls):
+        pass
+
+
 def filter_plot():
-    hfile = open('./data/iq_20M.dat', 'rb')
+    hfile = open('./data/iq_20M_g.dat', 'rb')
     sample_rate = 20e6
-    sample_time = 500e-6
+    sample_time = 0.01
     low_freq = 1e6
     high_freq = 2e6
     high_freq2 = 3e6
     block_size = int(sample_rate*sample_time)
-    start = 10000
+    start = block_size * 3 # 0.6e6
     datatype = np.complex64
-    threshold = 0.1775      # good: 0.1575
+    threshold = 0.52      # good: 0.1575
     frame_start_indices = [6,132,238]
 
     global iq,reals,imags,times
@@ -40,6 +56,9 @@ def filter_plot():
         reals = np.array([r.real for r in iq])
         imags = np.array([i.imag for i in iq])
         times = np.array([i*(1/sample_rate) for i in range(len(reals))])
+
+    # iq signal charactors
+    print(np.max(reals), np.argmax(reals))
 
     # 带通滤波器
     sos1 = signal.butter(10, [2*low_freq/sample_rate, 2*high_freq/sample_rate], 'bandpass', output='sos')
@@ -90,6 +109,24 @@ def filter_plot():
 
     # import statsmodels.tsa.api as smt
 
+def get_data():
+    hfile = open('./data/iq_20M_g.dat', 'rb')
+    datatype = np.complex64
+    block_size = 100000
+    iq = np.fromfile(hfile, dtype=datatype, count=block_size)
+    return iq
+
+def pretreat():
+    iq = get_data()
+
+
+def main():
+    parser = wifi_ana.set_options()
+    args = parser.parse_args()
+    wifi_ana(args.file, args)
 
 if __name__=='__main__':
-    filter_plot()
+    try:
+        pretreat()
+    except KeyboardInterrupt:
+        pass

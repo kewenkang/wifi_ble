@@ -91,28 +91,47 @@ def filter_plot():
 
 
 
-def get_data():
+def get_data(offset=192, length=160):
     hfile = open('./data/iq_20M_g.dat', 'rb')
+    sample_rate = 20e6
+    sample_time = 0.01
+    low_freq = 1e6
+    high_freq = 2e6
+    high_freq2 = 3e6
+    block_size = 700  # int(sample_rate*sample_time)
+    start = 6542700  # 0.6e6
     datatype = np.complex64
-    block_size = 100000
+    hfile.seek(datatype().nbytes * start, 1)
     iq = np.fromfile(hfile, dtype=datatype, count=block_size)
-    return iq
 
-def pretreat():
+    start_index= 35
+    iq_slices = iq[start_index + offset: start_index + length + 1 + offset]
+
+    return iq_slices
+
+def plot_data():
     iq = get_data()
+    # print(iq)
+    iq_fft = dofft(iq)
+    fig, (ax1, ax2) = plt.subplots(2, 1)
+    ax1.plot(np.abs(iq_fft), 'b-')
+    ax2.plot(np.angle(iq_fft), 'b-')
+    plt.show()
 
-    #
-    ac = acf_norm(iq)
-    ac_indices = np.arange(len(ac))
-    ac_indices[ac < threshold] = 0
-    pd_ac = pd.Series(ac)
-    print(pd_ac.describe())
-    ac_det_indices = np.arange(len(ac))[ac > threshold]
-    ac_det_start_len = convert_seq2start_len(ac_det_indices)
-    ac[ac < threshold] = 0
-    print('iq autocorrelation [5]: {}, [6]: {}'.format(ac[5], ac[6]))
-    print(ac_det_start_len.describe())
-    print(ac_det_start_len)
+def test_fir():
+    n = 1
+    scale = 1/n
+    b, a = LONG, [1,1]
+    iq = get_data()
+    y = signal.filtfilt(b, a, iq, padtype='constant', padlen=4, method='pad')
+    plt.plot(np.abs(y), 'b-')
+    plt.show()
+    i = np.abs(y).argsort()[::-1][:3]
+    print(i)
+
+
 
 if __name__=='__main__':
-    filter_plot()
+    # filter_plot()
+    # plot_data()
+    test_fir()

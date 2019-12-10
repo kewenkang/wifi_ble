@@ -3,7 +3,27 @@ from __future__ import print_function
 import numpy as np
 import pandas as pd
 from numpy.fft import fftpack
+import matplotlib.pyplot as plt
 
+
+LONG = np.array([
+complex(-0.0455, -1.0679), complex( 0.3528, -0.9865), complex( 0.8594,  0.7348), complex( 0.1874,  0.2475),
+complex( 0.5309, -0.7784), complex(-1.0218, -0.4897), complex(-0.3401, -0.9423), complex( 0.8657, -0.2298),
+complex( 0.4734,  0.0362), complex( 0.0088, -1.0207), complex(-1.2142, -0.4205), complex( 0.2172, -0.5195),
+complex( 0.5207, -0.1326), complex(-0.1995,  1.4259), complex( 1.0583, -0.0363), complex( 0.5547, -0.5547),
+complex( 0.3277,  0.8728), complex(-0.5077,  0.3488), complex(-1.1650,  0.5789), complex( 0.7297,  0.8197),
+complex( 0.6173,  0.1253), complex(-0.5353,  0.7214), complex(-0.5011, -0.1935), complex(-0.3110, -1.3392),
+complex(-1.0818, -0.1470), complex(-1.1300, -0.1820), complex( 0.6663, -0.6571), complex(-0.0249,  0.4773),
+complex(-0.8155,  1.0218), complex( 0.8140,  0.9396), complex( 0.1090,  0.8662), complex(-1.3868, -0.0000),
+complex( 0.1090, -0.8662), complex( 0.8140, -0.9396), complex(-0.8155, -1.0218), complex(-0.0249, -0.4773),
+complex( 0.6663,  0.6571), complex(-1.1300,  0.1820), complex(-1.0818,  0.1470), complex(-0.3110,  1.3392),
+complex(-0.5011,  0.1935), complex(-0.5353, -0.7214), complex( 0.6173, -0.1253), complex( 0.7297, -0.8197),
+complex(-1.1650, -0.5789), complex(-0.5077, -0.3488), complex( 0.3277, -0.8728), complex( 0.5547,  0.5547),
+complex( 1.0583,  0.0363), complex(-0.1995, -1.4259), complex( 0.5207,  0.1326), complex( 0.2172,  0.5195),
+complex(-1.2142,  0.4205), complex( 0.0088,  1.0207), complex( 0.4734, -0.0362), complex( 0.8657,  0.2298),
+complex(-0.3401,  0.9423), complex(-1.0218,  0.4897), complex( 0.5309,  0.7784), complex( 0.1874, -0.2475),
+complex( 0.8594, -0.7348), complex( 0.3528,  0.9865), complex(-0.0455,  1.0679), complex( 1.3868, -0.0000),
+])
 
 def calc_freq(time, sample_rate):
     N = len(time)
@@ -76,9 +96,16 @@ def acf_norm(data, ndelay=16, nwindow=48):
     # print(np.divide(a_list, p_list, out=np.zeros_like(a_list), where=p_list != 0, casting='unsafe'))
     return np.divide(a_list, p_list, out=np.zeros_like(a_list), where=p_list != 0, casting='unsafe')
 
+def plot_long():
+    f_long = dofft(LONG)
+    fig, (ax1, ax2) = plt.subplots(2,1)
+    ax1.plot(np.abs(f_long), 'b-')
+    ax2.plot(np.angle(f_long), 'r-')
+    plt.show()
 
 if __name__=='__main__':
     # test
+    plot_long()
     data1 = np.array([6,7,8,1,2,3,1,2,3,1,2,3,1,2,3,1,2,3,6,7,8], dtype=np.complex)
     data2 = np.array([6,7,8,1,2,3,1.1,2,2.9,1.2,1.8,3,1,2,3.3,6,7,8], dtype=np.complex)
     # print(moving_avg(data1, window_size=6))

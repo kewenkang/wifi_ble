@@ -15,7 +15,8 @@ def calc_freq(time, sample_rate):
 def dofft(iq):
     N = len(iq)
     iq_fft = np.fft.fftshift(fftpack.fft(iq))  # fft and shift axis
-    iq_fft = 20 * np.log10(abs((iq_fft + 1e-15) / N))  # convert to decibels, adjust power
+    # iq_fft = 20 * np.log10(abs((iq_fft + 1e-15) / N))  # convert to decibels, adjust power
+
     # adding 1e-15 (-300 dB) to protect against value errors if an item in iq_fft is 0
     return iq_fft
 
@@ -72,9 +73,8 @@ def acf_norm(data, ndelay=16, nwindow=48):
     p_list = moving_avg(data_bigger, window_size=nwindow)
 
     a_list = np.abs(a_list)
-
-    return np.divide(a_list, p_list, out=np.zeros_like(a_list), where=p_list != 0)
-    # return np.array(a_list/p_list, dtype=np.float)
+    # print(np.divide(a_list, p_list, out=np.zeros_like(a_list), where=p_list != 0, casting='unsafe'))
+    return np.divide(a_list, p_list, out=np.zeros_like(a_list), where=p_list != 0, casting='unsafe')
 
 
 if __name__=='__main__':

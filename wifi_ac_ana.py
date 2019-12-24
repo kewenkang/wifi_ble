@@ -229,7 +229,7 @@ class wifi_ana(object):
                             choices=("complex64", "float32", "uint32", "int32", "uint16",
                                      "int16", "uint8", "int8"),
                             help="Specify the data type [default=%(default)r]")
-        parser.add_argument("-B", "--block", type=int, default=40000,
+        parser.add_argument("-B", "--block", type=int, default=20000,
                             help="Specify the block size [default=%(default)r]")
         parser.add_argument("-s", "--start", type=int, default=200000,
                             help="Specify where to start in the file [default=%(default)r]")
@@ -244,7 +244,7 @@ class wifi_ana(object):
 
 def main():
     parser = wifi_ana.set_options()
-    args = parser.parse_args("-s 8000000 -B 100000 data/iq_20M_g.dat".split())
+    args = parser.parse_args("-s 15300000 -B 100000 data/iq_20M_g.dat".split())
     # args = parser.parse_args("-s 614500 -B 6500 data/iq_20M_g.dat".split()) # maybe bluebooth or zigbee signal, ac < 0.2
     # args = parser.parse_args("-s 1953000 -B 10000 data/iq_20M_g.dat".split()) # maybe bluebooth or zigbee signal, ac < 0.2
     # args = parser.parse_args("-s 2409500 -B 10000 data/iq_20M_g.dat".split()) # maybe bluebooth or zigbee signal, ac < 0.2
@@ -255,7 +255,7 @@ def main():
     # args = parser.parse_args("-s 4065000 data/iq_20M_g.dat".split()) # some short signal occur, ac > 0.6
     # args = parser.parse_args("-s 4830000 data/iq_20M_g.dat".split()) # some short signal occur, ac < 0.6
     # args = parser.parse_args("-s 6405000 data/iq_20M_g.dat".split()) # some short signal occur, ac < 0.6
-    args = parser.parse_args("-s 6542700 -B 700 data/iq_20M_g.dat".split()) # wifi occur, ac > 0.9
+    # args = parser.parse_args("-s 6542700 -B 700 data/iq_20M_g.dat".split()) # wifi occur, ac > 0.9
     # args = parser.parse_args("-s 6840000 data/iq_20M_g.dat".split()) # some short signal occur, ac < 0.6
     # args = parser.parse_args("-s 7205000 data/iq_20M_g.dat".split()) # some short signal occur, ac < 0.6
     # args = parser.parse_args("-s 7460000 data/iq_20M_g.dat".split()) # some short signal occur, ac > 0.5
@@ -263,6 +263,10 @@ def main():
     # args = parser.parse_args("-s 7860000 data/iq_20M_g.dat".split()) # some signal occur, ac < 0.2
     # args = parser.parse_args("-s 8055000 data/iq_20M_g.dat".split()) # some signal occur, ac > 0.6
     # args = parser.parse_args("-s 8485000 data/iq_20M_g.dat".split()) # some signal occur, ac < 0.3
+    # args = parser.parse_args("-s 9600000 data/iq_20M_g.dat".split()) # some signal occur, ac > 0.6
+    # args = parser.parse_args("-s 11600000 data/iq_20M_g.dat".split()) # some signal occur, ac > 0.6
+    # args = parser.parse_args("-s 12300000 data/iq_20M_g.dat".split()) # some signal occur, ac > 0.6
+    args = parser.parse_args("-s 15343650 -B 1000 data/iq_20M_g.dat".split()) # some signal occur, ac > 0.6
     wifi_ana(args.file, args)
 
 if __name__=='__main__':

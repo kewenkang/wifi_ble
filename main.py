@@ -15,8 +15,8 @@ def filter_plot():
     low_freq = 1e6
     high_freq = 2e6
     high_freq2 = 3e6
-    block_size = 700 #int(sample_rate*sample_time)
-    start = 6542700 # 0.6e6
+    block_size = 650 #int(sample_rate*sample_time)
+    start = 6542720 # 0.6e6
     datatype = np.complex64
     threshold = 0.89      # good: 0.1575
     frame_start_indices = [6,132,238]
@@ -65,9 +65,9 @@ def filter_plot():
     print(ac)
 
     # fft frequency domain analysis
-    start_index, length, offset = 35, 64, 192+64
+    start_index, length, offset = 0, 64, 160+33
     iq_slices = iq[start_index+offset: start_index+length+1+offset]
-    print(iq_slices)
+    # print(iq_slices)
     iq_fft = dofft(iq_slices)
     tstep = 1.0 / sample_rate
     # self.time = numpy.array([tstep*(self.position + i) for i in range(len(self.iq))])
@@ -80,18 +80,23 @@ def filter_plot():
     # plot_iq1 = ax2.plot(times, bandpass_reals, 'bo-', times, bandpass_imags, 'ro-')
     # plot_iq2 = ax3.plot(times, bandpass_reals2, 'bo-', times, bandpass_imags2, 'ro-')
     # plot fft
-    ax1_s.plot(time, iq_slices.real, 'b-')
+    ax1_s.plot(ac, 'b-')
     ax1_f.plot(freqs, np.abs(iq_fft), 'b-')
     # ax1_f.set_ylim((0,1.1))
     plt.show()
 
+    # long training
+    coor_list = correlation(iq_slices, LONG)
+    i = np.abs(coor_list).argsort()[::-1][:3]
+    print(i)
 
-
+    plt.plot(np.abs(coor_list), 'b-')
+    plt.show()
     # import statsmodels.tsa.api as smt
 
 
 
-def get_data(offset=192, length=160):
+def get_data(offset=0, length=160):
     hfile = open('./data/iq_20M_g.dat', 'rb')
     sample_rate = 20e6
     sample_time = 0.01
@@ -99,12 +104,13 @@ def get_data(offset=192, length=160):
     high_freq = 2e6
     high_freq2 = 3e6
     block_size = 700  # int(sample_rate*sample_time)
-    start = 6542700  # 0.6e6
+    start_list = [6542735, 15343711]
+    start = 6542735  # 0.6e6
     datatype = np.complex64
     hfile.seek(datatype().nbytes * start, 1)
     iq = np.fromfile(hfile, dtype=datatype, count=block_size)
 
-    start_index= 35
+    start_index= 0
     iq_slices = iq[start_index + offset: start_index + length + 1 + offset]
 
     return iq_slices
@@ -122,16 +128,17 @@ def test_fir():
     n = 1
     scale = 1/n
     b, a = LONG, [1,1]
-    iq = get_data()
-    y = signal.filtfilt(b, a, iq, padtype='constant', padlen=4, method='pad')
-    plt.plot(np.abs(y), 'b-')
-    plt.show()
-    i = np.abs(y).argsort()[::-1][:3]
+    iq = get_data(offset=0, length=320)
+    coor_list = correlation(iq, LONG)
+    i = np.abs(coor_list).argsort()[::-1][:3]
     print(i)
+
+    plt.plot(np.abs(coor_list), 'b-')
+    plt.show()
 
 
 
 if __name__=='__main__':
-    # filter_plot()
+    filter_plot()
     # plot_data()
-    test_fir()
+    # test_fir()

@@ -96,6 +96,21 @@ def acf_norm(data, ndelay=16, nwindow=48):
     # print(np.divide(a_list, p_list, out=np.zeros_like(a_list), where=p_list != 0, casting='unsafe'))
     return np.divide(a_list, p_list, out=np.zeros_like(a_list), where=p_list != 0, casting='unsafe')
 
+def correlation(data1, data2):
+    data2_conj = np.conjugate(data2)
+    corr_list = []
+    for i in range(len(data1)):
+        if i <= len(data1) - len(data2):
+            d1 = data1[i: i+len(data2)]
+            d2 = data2_conj
+        else:
+            d1 = data1[i:]
+            d2 = data2_conj[:len(data1) - i]
+        bigger_sum = np.sum(np.max([np.abs(d1)**2, np.abs(d2)**2], axis=0))
+        corr = np.sum(np.abs(d1 * d2))
+        corr_list.append(corr/bigger_sum)
+    return np.array(corr_list)
+
 def plot_long():
     f_long = dofft(LONG)
     fig, (ax1, ax2) = plt.subplots(2,1)
@@ -105,9 +120,10 @@ def plot_long():
 
 if __name__=='__main__':
     # test
-    plot_long()
+    # plot_long()
     data1 = np.array([6,7,8,1,2,3,1,2,3,1,2,3,1,2,3,1,2,3,6,7,8], dtype=np.complex)
-    data2 = np.array([6,7,8,1,2,3,1.1,2,2.9,1.2,1.8,3,1,2,3.3,6,7,8], dtype=np.complex)
-    # print(moving_avg(data1, window_size=6))
-    print(acf_norm(data1, ndelay=3, nwindow=6))
-    print(acf_norm(data2, ndelay=3, nwindow=6))
+    data2 = np.array([1,2,3], dtype=np.complex)
+    # # print(moving_avg(data1, window_size=6))
+    # print(acf_norm(data1, ndelay=3, nwindow=6))
+    # print(acf_norm(data2, ndelay=3, nwindow=6))
+    print(correlation(data1, data2))

@@ -16,7 +16,7 @@ def filter_plot():
     high_freq = 2e6
     high_freq2 = 3e6
     block_size = 700 #int(sample_rate*sample_time)
-    start = 6542700 # 0.6e6
+    start = 15343724 # 0.6e6
     datatype = np.complex64
     threshold = 0.89      # good: 0.1575
     frame_start_indices = [6,132,238]
@@ -65,7 +65,7 @@ def filter_plot():
     print(ac)
 
     # fft frequency domain analysis
-    start_index, length, offset = 35, 64, 192+64
+    start_index, length, offset = 0, 64, 192+64
     iq_slices = iq[start_index+offset: start_index+length+1+offset]
     print(iq_slices)
     iq_fft = dofft(iq_slices)
@@ -132,6 +132,6 @@ def test_fir():
 
 
 if __name__=='__main__':
-    # filter_plot()
+    filter_plot()
     # plot_data()
-    test_fir()
+    # test_fir()

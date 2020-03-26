@@ -1,9 +1,9 @@
-from __future__ import print_function
+# from __future__ import print_function
 
 import numpy as np
 import pandas as pd
 from numpy.fft import fftpack
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 
 LONG = np.array([
@@ -25,6 +25,59 @@ complex(-0.3401,  0.9423), complex(-1.0218,  0.4897), complex( 0.5309,  0.7784),
 complex( 0.8594, -0.7348), complex( 0.3528,  0.9865), complex(-0.0455,  1.0679), complex( 1.3868, -0.0000),
 ])
 
+LONG_F = np.array([0,0,0,0,0,0,
+                   1,  1, -1, -1, 1,  1, -1,  1, -1,  1,  1,  1,  1,  1, 1, -1, -1,  1, 1, -1, 1, -1, 1, 1, 1, 1, 0,
+                   1, -1, -1,  1, 1, -1,  1, -1,  1, -1, -1, -1, -1, -1, 1,  1, -1, -1, 1, -1, 1, -1, 1, 1, 1, 1,
+                   0,0,0,0,0])
+
+LONG_F_in_ble1 = np.array([0,0,0,0,0,0,0,0,
+                    0  ,0,0,0,
+                    0  ,0,0,0,
+                    0  ,0,0,0,
+                    0  ,0,0,0,
+                    0  ,0,0,0,
+                    0  ,0,0,0, 0, 1, 0, 0,  1, 0,
+                    0,0,
+                    0  ,0,0,0,
+                    0  ,0,0,0,
+                    0  ,0,0,0,
+                    0  ,0,0,0,
+                    0  ,0,0,
+                    0,0,0,0,0
+                    ])
+
+SHORT_F = np.array([0,0,0,0,0,0,0,0,
+                    complex(1,1)    ,0,0,0,
+                    complex(-1,-1)  ,0,0,0,
+                    complex(1,1)    ,0,0,0,
+                    complex(-1,-1)  ,0,0,0,
+                    complex(-1,-1)  ,0,0,0,
+                    complex(1,1)    ,0,0,0,0,0,0,0,
+                    complex(-1,-1)  ,0,0,0,
+                    complex(-1,-1)  ,0,0,0,
+                    complex(1,1)    ,0,0,0,
+                    complex(1,1)    ,0,0,0,
+                    complex(1,1)    ,0,0,0,
+                    complex(1,1)    ,0,0,
+                    0,0,0,0,0
+                    ])
+
+SHORT_F_in_ble1 = np.array([0,0,0,0,0,0,0,0,
+                    0  ,0,0,0,
+                    0  ,0,0,0,
+                    0  ,0,0,0,
+                    0  ,0,0,0,
+                    0  ,0,0,0,
+                    0  ,0,0,0, 0,0,0,0,
+                    complex(-1,-1)  ,0,0,0,
+                    0  ,0,0,0,
+                    0  ,0,0,0,
+                    0  ,0,0,0,
+                    0  ,0,0,0,
+                    0  ,0,0,
+                    0,0,0,0,0
+                    ])
+
 def calc_freq(time, sample_rate):
     N = len(time)
     Fs = 1.0 / (max(time) - min(time))
@@ -32,13 +85,19 @@ def calc_freq(time, sample_rate):
     freq = np.array([-Fn + i * Fs for i in range(N)])
     return freq
 
-def dofft(iq):
-    N = len(iq)
-    iq_fft = np.fft.fftshift(fftpack.fft(iq))  # fft and shift axis
-    # iq_fft = 20 * np.log10(abs((iq_fft + 1e-15) / N))  # convert to decibels, adjust power
+def dofft(iq, reverse=False):
+    if reverse:
+        # iq_ifft = np.fft.ifftshift(fftpack.ifft(iq))
+        iq_ifft = fftpack.ifft(iq)
+        return iq_ifft
+    else:
+        # iq_fft = np.fft.fftshift(fftpack.fft(iq))  # fft and shift axis
+        iq_fft = fftpack.fft(iq)  # fft and shift axis
+        # iq_fft = fftpack.fft(iq)  # fft no shift axis
+        # iq_fft = 20 * np.log10(abs((iq_fft + 1e-15) / N))  # convert to decibels, adjust power
 
-    # adding 1e-15 (-300 dB) to protect against value errors if an item in iq_fft is 0
-    return iq_fft
+        # adding 1e-15 (-300 dB) to protect against value errors if an item in iq_fft is 0
+        return iq_fft
 
 def moving_avg(data, window_size=48, scale=1.0):
     assert len(data) >= window_size, 'the length of data should not be smaller then nwindow'
@@ -80,7 +139,7 @@ def convert_seq2start_len(data_indices):
 
 
 def acf_norm(data, ndelay=16, nwindow=48):
-    assert len(data) >= nwindow, 'the length of data should not be smaller then nwindow'
+    assert len(data) >= nwindow, 'the length of data should be longger then nwindow'
     a_list = []
     p_list = []
     data_padding = np.concatenate([data, np.zeros(ndelay)]).astype(np.complex64)
@@ -96,18 +155,41 @@ def acf_norm(data, ndelay=16, nwindow=48):
     # print(np.divide(a_list, p_list, out=np.zeros_like(a_list), where=p_list != 0, casting='unsafe'))
     return np.divide(a_list, p_list, out=np.zeros_like(a_list), where=p_list != 0, casting='unsafe')
 
-def plot_long():
-    f_long = dofft(LONG)
-    fig, (ax1, ax2) = plt.subplots(2,1)
-    ax1.plot(np.abs(f_long), 'b-')
-    ax2.plot(np.angle(f_long), 'r-')
-    plt.show()
+# def plot_long():
+#     f_long = dofft(LONG)
+#     fig, (ax1, ax2) = plt.subplots(2,1)
+#     ax1.plot(np.abs(f_long), 'b-')
+#     ax2.plot(np.angle(f_long), 'r-')
+#     plt.show()
+
+def LSM(xcord, ycord):
+    xcord, ycord = np.array(xcord), np.array(ycord)
+    m = ((xcord * ycord).mean() - xcord.mean() * ycord.mean()) / (np.power(xcord, 2).mean() - np.power(xcord.mean(), 2))
+    c = ycord.mean() - m * xcord.mean()
+    return m, c
+
+def get_order(seq):
+    argsort_seq = np.argsort(seq)
+    seq_order = np.zeros_like(argsort_seq)
+    for ii, i in enumerate(argsort_seq):
+        seq_order[i] = ii
+    return seq_order
+
+def zero_one_norm(seq):
+    seq = np.array(seq, dtype=np.float)
+    return (seq - np.min(seq))/(np.max(seq) - np.min(seq))
+
+def zscore_norm(seq):
+    seq = np.array(seq, dtype=np.float)
+    return (seq - np.mean(seq))/np.std(seq)
 
 if __name__=='__main__':
     # test
-    plot_long()
+    # plot_long()
     data1 = np.array([6,7,8,1,2,3,1,2,3,1,2,3,1,2,3,1,2,3,6,7,8], dtype=np.complex)
     data2 = np.array([6,7,8,1,2,3,1.1,2,2.9,1.2,1.8,3,1,2,3.3,6,7,8], dtype=np.complex)
     # print(moving_avg(data1, window_size=6))
-    print(acf_norm(data1, ndelay=3, nwindow=6))
-    print(acf_norm(data2, ndelay=3, nwindow=6))
+    # print(acf_norm(data1, ndelay=3, nwindow=6))
+    # print(acf_norm(data2, ndelay=3, nwindow=6))
+    print(zero_one_norm([11,9,10,8]))
+    print(zscore_norm([11,9,10,8]))

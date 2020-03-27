@@ -36,7 +36,7 @@ LONG_F_in_ble1 = np.array([0,0,0,0,0,0,0,0,
                     0  ,0,0,0,
                     0  ,0,0,0,
                     0  ,0,0,0,
-                    0  ,0,0,0, 0, 1, 0, 0,  1, 0,
+                    0  ,0,0,0, 0, 1, -1, -1,  1, 1,
                     0,0,
                     0  ,0,0,0,
                     0  ,0,0,0,
@@ -45,6 +45,9 @@ LONG_F_in_ble1 = np.array([0,0,0,0,0,0,0,0,
                     0  ,0,0,
                     0,0,0,0,0
                     ])
+
+LONG_F_in_ble1_only = np.array([0, 1, -1, -1,  1, 1])
+
 
 SHORT_F = np.array([0,0,0,0,0,0,0,0,
                     complex(1,1)    ,0,0,0,
@@ -77,6 +80,8 @@ SHORT_F_in_ble1 = np.array([0,0,0,0,0,0,0,0,
                     0  ,0,0,
                     0,0,0,0,0
                     ])
+
+SHORT_F_in_ble1_only = np.array([0,0,0,0,complex(-1,-1)  ,0])
 
 def calc_freq(time, sample_rate):
     N = len(time)

@@ -173,6 +173,72 @@ def main_s_part_down_sampling():
     plt.savefig('./pictures/down_sampling_s.png')
     plt.show()
 
+def gfsk_demod(iq_t):
+    bits = []
+    angs = []
+    for i in range(1, len(iq_t)):
+        s1 = iq_t[i-1]
+        s2 = iq_t[i]
+        ang_ = np.angle(s1.conjugate() * s2)
+        if ang_ >= 0:
+            bits.append(1)
+        else:
+            bits.append(0)
+        angs.append(ang_)
+    return bits, angs
+
+def gfsk_demod_test():
+    from util import SHORT_F_in_ble1, LONG_F_in_ble1, dofft
+    # long_t = gen_t_wifi_symble(LONG_F_in_ble1)
+    f = LONG_F_in_ble1
+    long_t1 = dofft(f, reverse=True)
+    long_t1 = np.concatenate((long_t1[-32:], long_t1, long_t1))
+    long_t1_down_sampling = long_t1[::10]
+    # print(long_t1_down_sampling)
+    # iq_t = long_t1_down_sampling
+    # for i in range(1, len(iq_t)):
+    #     s1 = iq_t[i-1]
+    #     s2 = iq_t[i]
+    #     ang_ = np.angle(s1.conjugate() * s2)
+    #     if ang_ >= 0:
+    #         print(1)
+    #     else:
+    #         print(0)
+    #     print('delta phi: %s' % ( ang_ / np.pi))
+    print(gfsk_demod(long_t1_down_sampling))
+
+def ble_demod():
+    from util import LONG_F, dofft
+    subcarrier_wb = 0.3125
+    subcarrier_f = np.arange(subcarrier_wb/2, 20, subcarrier_wb)
+    # print(len(subcarrier_f))
+    for i in range(0, 20, 2):
+        ble_begin = i
+        ble_end = i + 2
+        ble_channel_id = ble_end/2
+        LONG_in_ble = np.where((subcarrier_f > ble_begin) & (subcarrier_f < ble_end), LONG_F, 0)
+        long_t_in_ble = dofft(LONG_in_ble, reverse=True)
+        long_t = np.concatenate((long_t_in_ble[-32:], long_t_in_ble, long_t_in_ble))
+        for j in range(20):
+            long_t_down_sampling = long_t[j::20]
+            bits, angs = gfsk_demod(long_t_down_sampling)
+            flag_continuous_same = False
+            max_diff = 0
+            for i, b in enumerate(bits[1:]):
+                if bits[i] == b:
+                    flag_continuous_same = True
+                    # print('not preamble. ble channel id: %d, offset: %d' % (ble_channel_id, j))
+                    # break
+                else:
+                    max_diff += 1
+            if not flag_continuous_same:
+                print('ble channel id: %d, offset: %d, corresponding bits: %s' % (ble_channel_id, j, bits))
+            else:
+                if max_diff >=5:
+                    # print('max_diff: %d' % max_diff)
+                    print(angs)
+                    print('ble channel id: %d, offset: %d, corresponding bits: %s' % (ble_channel_id, j, bits))
+
 
 def test_gen_wifi():
     from util import LONG_F, dofft
@@ -204,11 +270,27 @@ def test_fsk():
     plt.savefig('./pictures/2fsk.png')
     plt.show()
 
+def test_psk():
+    I = [1,0,-1,0,-1]
+    Q = [0,1,0,-1,0]
+    i_q = list(zip(I,Q))
+    for i in range(1, len(i_q)):
+        s1 = complex(*i_q[i-1])
+        s2 = complex(*i_q[i])
+        ang_ = np.angle(s1.conjugate() * s2)
+        ang1 = np.angle(s1) % (2 * np.pi)
+        ang2 = np.angle(s2) % (2 * np.pi)
+        # print(ang1, ang2)
+        # ang = ang2 - ang1
+        ang = (ang2 - ang1)
+        print(ang / np.pi)
+        print(ang_ / np.pi)
+
 if __name__ == '__main__':
     # main_l()
     # main_s_part_down_sampling()
     # main_l_part_down_sampling()
-    test_fsk()
-
-
-
+    # test_fsk()
+    # test()
+    # gfsk_demod_test()
+    ble_demod()

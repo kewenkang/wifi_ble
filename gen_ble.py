@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings('ignore')
 
+from util import zscore_norm, avg_norm
+
 INTERVAL = 1e-8
 NUMBER_PER_MU = int((1e-6)/INTERVAL)
 def gen_fsk(bits, fs=1e6, h=0.5, num_per_mu=NUMBER_PER_MU):
@@ -98,10 +100,29 @@ def main_gen_oqpsk():
         iq_t.append(complex(i, q))
     print(iq_t)
 
+def find_nearest(points, constellation=[-7, -5, -3, -1, 1, 3, 5, 7]):
+    nearests = []
+    for p in points:
+        nearest = [constellation[0], constellation[0]]
+        distance = [np.abs(p[0] - constellation[0]), np.abs(p[1] - constellation[0])]
+        for c in constellation[1:]:
+            dist0 = np.abs(p[0] - c)
+            dist1 = np.abs(p[1] - c)
+            if dist0 < distance[0]:
+                distance[0] = dist0
+                nearest[0] = c
+            if dist1 < distance[1]:
+                distance[1] = dist1
+                nearest[1] = c
+        nearests.append(nearest)
+    return nearests
+
 
 def main_demod_oqpsk():
     bits = [1, 0, 1, 0, 1, 0, 1, 0]
     iq_t = [1, -1j, 1, -1j, 1, -1j, 1, -1j]
+    constellation = [-7, -5, -3, -1, 1, 3, 5, 7]
+    constellation_x, constellation_y = np.meshgrid(constellation, constellation)
     t_index = np.arange(8)
     demod_bits, _ = gfsk_demod(iq_t)
     print demod_bits
@@ -118,29 +139,100 @@ def main_demod_oqpsk():
     symble2 = iq_t_gen[96:]
 
     f_1 = fft.fftshift(fft.fft(symble1))
-    # print f_1
     t_1 = fft.ifft(fft.ifftshift(f_1))
 
+    normalized_f_1_real = zscore_norm(np.real(f_1))
+    normalized_f_1_iamg = zscore_norm(np.imag(f_1))
+    normalized_f_1 = [complex(i, j) for i,j in zip(normalized_f_1_real, normalized_f_1_iamg)]
+    normalized_t_1 = fft.ifft(fft.ifftshift(normalized_f_1))
+
+    nearest_f1_points = find_nearest([[i, j] for i,j in zip(normalized_f_1_real, normalized_f_1_iamg)])
+    nearest_f1 = [complex(*p) for p in nearest_f1_points]
+    nearest_t_1 = fft.ifft(fft.ifftshift(nearest_f1))
+
+    emulated_ble_t = np.concatenate([nearest_t_1[-16:], nearest_t_1, nearest_t_1[-16:], nearest_t_1], axis=0)
+    emulated_ble_t_down_sample = emulated_ble_t[::20]
+    emulated_demod_bits, _ = gfsk_demod(emulated_ble_t_down_sample)
+    print(emulated_demod_bits)
+
+
+    avg_norm_f_1_real = avg_norm(np.real(f_1))*7
+    avg_norm_f_1_iamg = avg_norm(np.imag(f_1))*7
+    avg_norm_f_1 = [complex(i, j) for i,j in zip(avg_norm_f_1_real, avg_norm_f_1_iamg)]
+    avg_norm_t_1 = fft.ifft(fft.ifftshift(avg_norm_f_1))
+
+
     # plt.plot(t_index, iq_t)
+    row, col = 4, 3
+    plt.subplot(row, col, 1)
+    plt.plot(np.arange(len(iq_t_gen)), np.imag(iq_t_gen))
+    plt.plot(np.arange(len(iq_t_gen)), np.real(iq_t_gen))
+    plt.title('MSK signal')
+    plt.subplot(row, col, 2)
     # plt.plot(np.arange(len(iq_t_gen_down_sample)), np.imag(iq_t_gen_down_sample))
     # plt.plot(np.arange(len(iq_t_gen_down_sample)), np.real(iq_t_gen_down_sample))
-    # plt.plot(np.arange(len(iq_t_gen)), np.imag(iq_t_gen))
-    # plt.plot(np.arange(len(iq_t_gen)), np.real(iq_t_gen))
-    # plt.plot(np.arange(len(f_1)), np.imag(f_1))
-    # plt.plot(np.arange(len(f_1)), np.real(f_1))
     # plt.plot(np.arange(len(t_1)), np.imag(t_1))
     # plt.plot(np.arange(len(t_1)), np.real(t_1))
-    # plt.plot(np.arange(len(symble1)), np.imag(symble1))
-    # plt.plot(np.arange(len(symble1)), np.real(symble1))
-    # plt.scatter(np.real(f_1), np.imag(f_1), s=3)
+    plt.plot(np.arange(len(symble1)), np.imag(symble1))
+    plt.plot(np.arange(len(symble1)), np.real(symble1))
+    plt.title('needed wifi symble')
+    plt.subplot(row, col, 3)
+    plt.plot(np.arange(len(f_1)), np.imag(f_1))
+    plt.plot(np.arange(len(f_1)), np.real(f_1))
+    plt.title('frequency domain')
+
+    plt.subplot(row, col, 4)
+    plt.scatter(normalized_f_1_real, normalized_f_1_iamg, s=4)
+    plt.scatter(constellation_x, constellation_y, c='red', s=1)
+    plt.grid()
+    plt.subplot(row, col, 5)
+    plt.plot(np.arange(len(normalized_t_1)), np.imag(normalized_t_1))
+    plt.plot(np.arange(len(normalized_t_1)), np.real(normalized_t_1))
+    plt.subplot(row, col, 6)
+    plt.plot(np.arange(len(normalized_f_1_iamg)), normalized_f_1_iamg)
+    plt.plot(np.arange(len(normalized_f_1_real)), normalized_f_1_real)
+
+    # plt.subplot(row, col, 7)
+    # plt.scatter(avg_norm_f_1_real, avg_norm_f_1_iamg, s=4)
+    # plt.scatter(constellation_x, constellation_y, c='red', s=1)
+    # plt.grid()
+    # plt.subplot(row, col, 8)
+    # plt.plot(np.arange(len(avg_norm_t_1)), np.imag(avg_norm_t_1))
+    # plt.plot(np.arange(len(avg_norm_t_1)), np.real(avg_norm_t_1))
+    # plt.subplot(row, col, 9)
+    # plt.plot(np.arange(len(avg_norm_f_1_iamg)), avg_norm_f_1_iamg)
+    # plt.plot(np.arange(len(avg_norm_f_1_real)), avg_norm_f_1_real)
+
+    plt.subplot(row, col, 7)
+    plt.scatter(np.real(nearest_f1), np.imag(nearest_f1), s=4)
+    plt.scatter(constellation_x, constellation_y, c='red', s=1)
+    plt.grid()
+    plt.subplot(row, col, 8)
+    plt.plot(np.arange(len(nearest_t_1)), np.imag(nearest_t_1))
+    plt.plot(np.arange(len(nearest_t_1)), np.real(nearest_t_1))
+    plt.subplot(row, col, 9)
+    plt.plot(np.arange(len(nearest_f1)), np.imag(nearest_f1))
+    plt.plot(np.arange(len(nearest_f1)), np.real(nearest_f1))
+
+    plt.subplot(row, col, 10)
+    plt.plot(np.arange(len(emulated_ble_t)), np.imag(emulated_ble_t))
+    plt.plot(np.arange(len(emulated_ble_t)), np.real(emulated_ble_t))
+    plt.subplot(row, col, 11)
+    plt.plot(np.arange(len(emulated_ble_t_down_sample)), np.imag(emulated_ble_t_down_sample))
+    plt.plot(np.arange(len(emulated_ble_t_down_sample)), np.real(emulated_ble_t_down_sample))
+
+
+    plt.tight_layout()
     plt.show()
 
 
-
+def test_nearest():
+    points = [(2,3), (1,4), (1.5,7)]
+    print(find_nearest(points))
 
 if __name__ == '__main__':
     main_demod_oqpsk()
-
+    # test_nearest()
 
 
 

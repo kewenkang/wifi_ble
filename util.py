@@ -184,6 +184,10 @@ def zero_one_norm(seq):
     seq = np.array(seq, dtype=np.float)
     return (seq - np.min(seq))/(np.max(seq) - np.min(seq))
 
+def avg_norm(seq):
+    seq = np.array(seq, dtype=np.float)
+    return (seq - np.mean(seq))/(np.max(seq) - np.min(seq))
+
 def zscore_norm(seq):
     seq = np.array(seq, dtype=np.float)
     return (seq - np.mean(seq))/np.std(seq)
@@ -197,4 +201,5 @@ if __name__=='__main__':
     # print(acf_norm(data1, ndelay=3, nwindow=6))
     # print(acf_norm(data2, ndelay=3, nwindow=6))
     print(zero_one_norm([11,9,10,8]))
+    print(avg_norm([11,9,10,8]))
     print(zscore_norm([11,9,10,8]))
